@@ -79,6 +79,15 @@ fun RadialMenu(
     var pulsado by remember { mutableStateOf(false) }
     val radiusPx = with(LocalDensity.current) { radius.toPx() }
 
+    // Lectura siempre fresca de items/abierto dentro del gesto, sin que la corrutina
+    // se reinicie. Si `abierto` (o `items`, reconstruido en cada recomposicion) estuviera
+    // entre las claves de pointerInput, al tocar el centro onAbiertoChange(true) recompondria,
+    // la clave cambiaria y el gesto se CANCELARIA A MITAD DE LA PULSACION: la corrutina nueva
+    // volvia a capturar el mismo dedo aun bajado y junto con el `up` interpretaba el toque
+    // como "tap con el abanico ya abierto" -> lo cerraba al soltar (tener que mantener pulsado).
+    val itemsActuales by rememberUpdatedState(items)
+    val abiertoActual by rememberUpdatedState(abierto)
+
     fun anguloDeIndice(i: Int): Double {
         val paso = if (n > 1) spread / (n - 1) else 0f
         val gradoInicial = -90.0 - spread / 2.0
@@ -163,12 +172,11 @@ fun RadialMenu(
         }
 
         // Boton central: aqui vive el gesto completo (pulsar -> arrastrar -> soltar).
-        // `abierto` va dentro de las keyes para que el gesto vuelva a leerse con el
-        // valor actual: si no, la corrutina conserva el valor inicial y nunca cierra.
+        // La clave es Unit: nada de reiniciar el gesto al cambiar el estado / recomponer.
         Box(
             modifier = Modifier
                 .size(56.dp)
-                .pointerInput(items, spread, abierto) {
+                .pointerInput(Unit) {
                     awaitEachGesture {
                         // 1) esperamos la pulsacion sobre el boton central
                         var bajada: PointerInputChange? = null
@@ -178,7 +186,7 @@ fun RadialMenu(
                         }
                         val origen = bajada.position
                         val puntero = bajada.id
-                        val estabaAbierto = abierto
+                        val estabaAbierto = abiertoActual
                         var seMovio = false
                         pulsado = true
                         apuntando = null
@@ -205,11 +213,10 @@ fun RadialMenu(
                         when {
                             // arrastre que termina sobre una opcion: se ejecuta
                             seMovio && apuntando != null -> {
-                                items[apuntando!!].onClick()
+                                itemsActuales[apuntando!!].onClick()
                                 onAbiertoChange(false)
                             }
-                            // toque simple sin arrastre: si estaba abierto se cierra,
-                            // si estaba cerrado queda abierto (esperando segundo toque o gesto)
+                            // toque simple sin arrastre: alterna (un toque abre, otro cierra)
                             !seMovio && estabaAbierto -> onAbiertoChange(false)
                             // arrastre que no llego a ninguna opcion: se cierra
                             seMovio -> onAbiertoChange(false)

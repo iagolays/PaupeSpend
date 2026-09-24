@@ -1,5 +1,7 @@
 package com.tuusuario.gastos
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -36,7 +38,17 @@ object Rutas {
 
 @Composable
 fun AppNavHost(navController: NavHostController = rememberNavController()) {
-    NavHost(navController = navController, startDestination = Rutas.PRINCIPAL) {
+    // Sin transicion entre pantallas: un cambio instantaneo evita el destello
+    // blanco que aparecia al deslizar/fundir pantallas sobre el fondo (muy visible
+    // en modo oscuro, donde el ventana base es clara).
+    NavHost(
+        navController = navController,
+        startDestination = Rutas.PRINCIPAL,
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None },
+    ) {
         composable(Rutas.PRINCIPAL) {
             PantallaPrincipal(
                 onAnadirGastoManual = { navController.navigate(Rutas.GASTO) },
