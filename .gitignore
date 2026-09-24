@@ -1,0 +1,18 @@
+# Gradle
+.gradle/
+build/
+app/build/
+captures/
+
+# IDE (Android Studio / IntelliJ)
+.idea/
+*.iml
+.kotlin/
+
+# Configuracion local de maquina (rutas personales, no se suben)
+local.properties
+
+# Archivos auxiliares / temporales
+gastos-app.zip
+*.log
+*.apk
